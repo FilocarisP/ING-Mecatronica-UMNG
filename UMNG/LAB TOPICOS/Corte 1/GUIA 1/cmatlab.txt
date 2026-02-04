@@ -1,0 +1,134 @@
+% design_poles_FCC_FCO.m
+% Script para diseño de controlador por ubicación de polos
+% en forma canónica controlable (FCC) y observable (FCO)
+clear; clc;
+%% Parámetros de la planta
+b0 = 0.2985;
+a1 = 0.2654;
+a0 = 2.9856;
+
+% Polinomio deseado: (s^2+0.8 s+0.64)*(s+4)
+desired_poly = conv([1 0.8 0.64],[1 4]);  % = [1 4.8 3.84 2.56]
+
+fprintf('Polinomio deseado: s^3 + %.4f s^2 + %.4f s + %.4f\n', ...
+    desired_poly(2), desired_poly(3), desired_poly(4));
+
+%% 1) Diseño FCC
+fprintf('\n--- Diseño FCC ---\n');
+% Matrices FCC
+A = [0 1; -a0 -a1];    % forma canónica controlable\ nB = [0; 1];
+C = [b0 0];            % C ajustada para incluir b0 en C
+
+% Matriz extendida FCC\ nA_star = [A - B*K unknown];
+% Para diseño simbólico, directamente coeficientes
+% El polinomio característico es:
+% s^3 + (a1+K2) s^2 + (a0+K1) s - b0*Ki = 0
+
+% Igualar coeficientes:
+Kd2_fcc = desired_poly(2) - a1;
+Kd1_fcc = desired_poly(3) - a0;
+Kid_fcc  = -desired_poly(4)/b0;
+
+% Mostrar resultados
+fprintf('FCC: K2 = %.4f, K1 = %.4f, Ki = %.4f\n', Kd2_fcc, Kd1_fcc, Kid_fcc);
+
+% Guardar en workspace de Simulink
+assignin('base','K1_FCC',Kd1_fcc);
+assignin('base','K2_FCC',Kd2_fcc);
+assignin('base','Ki_FCC', Kid_fcc);
+
+%% 2) Diseño FCO
+fprintf('\n--- Diseño FCO ---\n');
+% Matrices FCO
+Ao = [-a1 -a0; 1 0];
+Bo = [b0; 0];
+Co = [1 0];
+
+% Polinomio característico extendido:
+% s^3 + (a1+K2) s^2 + (a0+K1) s - b0*Ki = 0
+% Igual que FCC por dualidad
+
+Kd2_fco = desired_poly(2) - a1;
+Kd1_fco = desired_poly(3) - a0;
+Kid_fco  = -desired_poly(4)/b0;
+
+% Mostrar resultados
+fprintf('FCO: K2 = %.4f, K1 = %.4f, Ki = %.4f\n', Kd2_fco, Kd1_fco, Kid_fco);
+
+% Guardar en workspace de Simulink
+assignin('base','K1_FCO',Kd1_fco);
+assignin('base','K2_FCO',Kd2_fco);
+assignin('base','Ki_FCO', Kid_fco);
+
+fprintf('\nVariables guardadas en workspace para Simulink:\n');
+fprintf('K1_FCC, K2_FCC, Ki_FCC, K1_FCO, K2_FCO, Ki_FCO\n');
+
+
+/////////////////////////////////////////////////////////////////
+
+% design_transform_fcc_fco.m
+% Script MATLAB para diseño paso a paso de controlador por ubicación de polos
+% usando método de matriz de transformación (FCC y FCO)
+clear; clc;
+
+%% Parámetros de la planta
+a0 = 2.9856; a1 = 0.2654; b0 = 0.2985;
+fprintf('Parámetros de la planta:\n a0 = %.4f, a1 = %.4f, b0 = %.4f\n\n', a0, a1, b0);
+
+%% Polinomio deseado (p1,p2 dominantes, p3 = -4)
+zd = 0.5; wn = 0.8; p3 = -4;
+poly2 = [1, 2*zd*wn, wn^2];               % s^2 + 0.8s + 0.64
+poly3 = conv(poly2, [1, -p3]);           % (s^2+0.8s+0.64)*(s+4)
+fprintf('Polinomio deseado: s^3 + %.4f s^2 + %.4f s + %.4f\n\n', poly3(2), poly3(3), poly3(4));
+
+%% I. FCC - Forma Canónica Controlable
+fprintf('--- FCC: Companion canonical ---\n');
+Ac = [0 1; -a0 -a1];  Bc = [0; 1];  Cc = [b0 0];
+fprintf('A_c = [0 1; -%.4f -%.4f]\n', a0, a1);
+fprintf('B_c = [0; 1], C_c = [%.4f 0]\n\n', b0);
+
+% 1) Matriz de transformación T = [B_c, A_c*B_c]
+fprintf('--- Matriz de Transformación FCC (T) ---\n');
+T = [Bc, Ac*Bc];  disp(T);
+
+% 2) Sistema en coordenadas companion: ya Ac,Bc
+% 3) Diseño de Kc en companion vía igualación coeficientes
+a2 = poly3(2); a1d = poly3(3); a0d = poly3(4);
+K2c = a2 - a1;  K1c = a1d - a0;  Kic = -a0d/b0;
+fprintf('Kc = [K1, K2, Ki] = [%.4f, %.4f, %.4f]\n', K1c, K2c, Kic);
+
+% 4) Transformar ganancia a coordenadas originales: K = Kc * T^{-1}
+Ts = inv(T);
+K_orig = [K1c, K2c, Kic] * Ts;
+fprintf('Ganancia en base original (FCC): K = [%.4f, %.4f]  (último Ki aplicado a integrador separado)\n', K_orig(1), K_orig(2));
+
+% Guardar
+assignin('base','Kc_FCC', [K1c, K2c, Kic]);
+assignin('base','Korig_FCC', K_orig);
+
+%% II. FCO - Forma Canónica Observable
+fprintf('\n--- FCO: Companion observable ---\n');
+Ao = [-a1 -a0; 1 0];  Bo = [b0; 0];  Co = [1 0];
+fprintf('A_o = [-%.4f -%.4f; 1 0]\n', a1, a0);
+fprintf('B_o = [%.4f; 0], C_o = [1 0]\n\n', b0);
+
+% 1) Matriz de transformación observable: To^T = [C_o; C_o*Ao]
+fprintf('--- Matriz de Transformación FCO (T_o) ---\n');
+ToT = [Co; Co*Ao];  To = ToT';  disp(To);
+
+% 2) Diseño de Ko en companion observable (dual a FCC)
+K2o = K2c;  K1o = K1c;  Kio = Kic;
+fprintf('Ko_comp = [K1, K2, Ki] = [%.4f, %.4f, %.4f]\n', K1o, K2o, Kio);
+
+% 3) Transformar ganancia a base original: Ko_orig = Ko_comp * inv(To)
+Tos = inv(To);
+Ko_orig = [K1o, K2o, Kio] * Tos;
+fprintf('Ganancia en base original (FCO): K = [%.4f, %.4f]\n', Ko_orig(1), Ko_orig(2));
+
+% Guardar
+assignin('base','Ko_FCO', [K1o, K2o, Kio]);
+assignin('base','Korig_FCO', Ko_orig);
+fprintf('\nVariables guardadas en workspace para Simulink:\n');
+fprintf('Kc_FCC, Korig_FCC, Ko_FCO, Korig_FCO\n');
+
+

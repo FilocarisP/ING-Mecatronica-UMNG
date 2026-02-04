@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<robot name="cylindrical_robot_rpp">
+
+  <material name="base_color">
+    <color rgba="0.2 0.2 0.2 1"/> </material>
+  <material name="arm_color">
+    <color rgba="0 0.4 0.8 1"/> </material>
+  <material name="slide_color">
+    <color rgba="0.8 0.2 0 1"/> </material>
+  <material name="gripper_color">
+    <color rgba="0.6 0.6 0.6 1"/> </material>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.1" radius="0.25"/>
+      </geometry>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <material name="base_color"/>
+    </visual>
+  </link>
+
+  <link name="link1_rotation_post">
+    <visual>
+      <geometry>
+        <cylinder length="0.31" radius="0.03"/>
+      </geometry>
+      <origin xyz="0 0 0.155" rpy="0 0 0"/>
+      <material name="arm_color"/>
+    </visual>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="joint1_rotation" type="revolute">
+    <parent link="base_link"/>
+    <child link="link1_rotation_post"/>
+    <axis xyz="0 0 1"/> <limit lower="-3.1415" upper="3.1415" effort="100" velocity="1"/> <origin xyz="0 0 0.1" rpy="0 0 0"/>
+  </joint>
+
+  <link name="link2_vertical_slider">
+    <visual>
+      <geometry>
+        <box size="0.1 0.1 0.1"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="slide_color"/>
+    </visual>
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.02" ixy="0" ixz="0" iyy="0.02" iyz="0" izz="0.02"/>
+    </inertial>
+  </link>
+
+  <joint name="joint2_vertical" type="prismatic">
+    <parent link="link1_rotation_post"/>
+    <child link="link2_vertical_slider"/>
+    <axis xyz="0 0 1"/> <limit lower="-0.1" upper="0.2" effort="100" velocity="1"/>
+    <origin xyz="0 0 0.31" rpy="0 0 0"/> 
+  </joint>
+
+  <link name="link3_reach_arm">
+    <visual>
+      <geometry>
+        <box size="0.31 0.05 0.05"/>
+      </geometry>
+      <origin xyz="0.155 0 0" rpy="0 0 0"/> 
+      <material name="arm_color"/>
+    </visual>
+    <inertial>
+      <mass value="1.5"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.05" iyz="0" izz="0.05"/>
+    </inertial>
+  </link>
+
+  <joint name="joint3_reach" type="prismatic">
+    <parent link="link2_vertical_slider"/>
+    <child link="link3_reach_arm"/>
+    <axis xyz="1 0 0"/> <limit lower="0" upper="0.31" effort="100" velocity="1"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="end_effector_gripper">
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="gripper_color"/>
+    </visual>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="joint4_fixed_gripper" type="fixed">
+    <parent link="link3_reach_arm"/>
+    <child link="end_effector_gripper"/>
+    <origin xyz="0.31 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>

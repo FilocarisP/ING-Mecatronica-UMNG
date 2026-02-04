@@ -1,0 +1,117 @@
+clear;
+clc;
+close all;
+
+% Datos del sistema continuo
+%num = [1.962e-4 1.1548332e-3]; %5
+%den = [1 9.81 19.24722]; %5
+num = [0.370465 0.265128 118.983645]; %2
+den = [1 0.594985 321.255843 0]; % 2
+%num = [0.05]; %5
+%den = [1 20 10000]; %4
+
+% Crear sistema continuo
+sys_c = tf(num, den);
+
+% Tiempo de muestreo
+Tm = 0.1;
+
+% Discretización por ZOH
+sys_d = c2d(sys_c, Tm, 'zoh');
+
+% Mostrar sistema discreto
+disp('Sistema discreto (ZOH):');
+sys_d
+
+%sisotool(sys_c)
+
+
+% Extraer coeficientes del sistema discreto
+[num_d, den_d] = tfdata(sys_d, 'v');
+
+
+% % Obtener forma espacio de estados estándar
+% [A, B, C, D] = tf2ss(num_d, den_d);
+% 
+% % Forma canónica controlable
+% sys_ctrl = canon(ss(A, B, C, D, Tm), 'companion');
+% [A_ctrl, B_ctrl, C_ctrl, D_ctrl] = ssdata(sys_ctrl);
+% disp('Forma canónica observable:');
+% disp('A_obs ='); disp(A_ctrl);
+% disp('B_obs ='); disp(B_ctrl);
+% disp('C_obs ='); disp(C_ctrl);
+% disp('D_obs ='); disp(D_ctrl);
+% 
+% % Forma canónica observable (transpuesta de la controlable del sistema transpuesto)
+% sys_obs = canon(ss(A', C', B', D', Tm), 'companion');
+% [A_obs, B_obs, C_obs, D_obs] = ssdata(sys_obs);
+% % Transponer para volver al sistema original
+% A_obs = A_obs';
+% B_obs = C_obs';
+% C_obs = B_obs';
+% D_obs = D_obs';
+% 
+% disp('Forma canónica controlable:');
+% disp('A_ctrl ='); disp(A_obs);
+% disp('B_ctrl ='); disp(B_obs);
+% disp('C_ctrl ='); disp(C_obs);
+% disp('D_ctrl ='); disp(D_obs);
+
+% G2 = [0 1 0;
+%     0 0 1;
+%     -0.5738 0.5161 -0.9422]
+% H2 = [0; 0; 1]
+% 
+% C2= [0.03474 0.01577 0.03721]
+% 
+% D=0;
+% 
+% S2 = [H2 G2*H2 G2^2*H2]
+% 
+% det(S2)
+% 
+% % Controlador AC Y MT
+% 
+% GE2 = [G2 zeros(3,1);
+%     -C2*G2 1]
+% 
+% HE2= [H2; -C2*H2]
+% SE2 = [HE2 GE2*HE2 GE2^2*HE2 GE2^3*HE2]
+% 
+% det(S2)
+% % MT 
+% M2 = [-0.5738 0.5161 -0.9422 1;
+%    0.5161 -0.9422 1 0;
+% -0.9422 1 0 0;
+% 1 0 0 0]
+% 
+% T = SE2 * M2
+% K = [-3.66 4.0778 -3.5761 0.1272]*inv(T)
+
+G2 = [1 0; 1.2542 -0.3749]
+H2 = [0; 1]
+
+C2= [-0.0908e-4 0.1632e-4]
+
+D=0;
+
+S2 = [H2 G2*H2]
+
+det(S2)
+
+% Controlador AC Y MT
+
+GE2 = [G2 zeros(2,1);
+    -C2*G2 1]
+
+HE2= [H2; -C2*H2]
+SE2 = [HE2 GE2*HE2 GE2^2*HE2]
+
+det(S2)
+% MT 
+M2 = [-1.2542 0.37]
+
+T = SE2 * M2
+% K = [-3.66 4.0778 -3.5761 0.1272]*inv(T)
+% 
+
