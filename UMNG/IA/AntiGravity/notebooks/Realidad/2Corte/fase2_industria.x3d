@@ -1,0 +1,114 @@
+<X3D profile='H3DAPI' version='1.4'>
+  <Scene>
+    <!-- Configuración del dispositivo háptico -->
+    <DeviceInfo>
+      <ForceDimensionDevice DEF='Falcon' positionCalibration="1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1">
+        <GodObjectRenderer sphereRadius='0.005'/>
+      </ForceDimensionDevice>
+    </DeviceInfo>
+
+    <Viewpoint description='Estacion Industrial UMNG (Proxima)' position='0 0.08 0.22' orientation='1 0 0 -0.45'/>
+    <NavigationInfo type='"EXAMINE" "ANY"'/>
+
+    <!-- CURSOR VISUAL SIN COLISION -->
+    <Transform DEF='CURSOR_T' translation='0 0 0'>
+      <Shape>
+        <Appearance><Material emissiveColor='0 1 0' diffuseColor='0 1 0'/></Appearance>
+        <Sphere radius='0.004'/>
+      </Shape>
+    </Transform>
+    <ROUTE fromNode='Falcon' fromField='devicePosition' toNode='CURSOR_T' toField='set_translation'/>
+
+    <!-- MUNDO INDUSTRIAL (Escala 0.005 = 1 unidad -> 5mm) -->
+    <Transform scale='0.005 0.005 0.005' translation='0 0 -0.05'>
+      <Background
+        backUrl='"industrial_bg.png"' frontUrl='"industrial_bg.png"' leftUrl='"industrial_bg.png"'
+        rightUrl='"industrial_bg.png"' bottomUrl='"industrial_bg.png"' topUrl='"industrial_bg.png"'/>
+      
+      <DirectionalLight direction='0 -1 -0.5' intensity='0.9' ambientIntensity='0.5'/>
+      <PointLight location='0 15 5' intensity='0.6'/>
+      
+      <!-- Luz puntual para la mesa de inspección -->
+      <PointLight location='7.5 6 0' intensity='0.8' color='1 1 1' radius='10'/>
+
+      <!-- ANIMACIONES -->
+      <TimeSensor DEF='ClockR' cycleInterval='2.0' loop='true' enabled='true' />
+      <OrientationInterpolator DEF='InterpR' key='0 0.25 0.5 0.75 1' keyValue='1 0 0 0  1 0 0 1.5708  1 0 0 3.1416  1 0 0 4.7124  1 0 0 6.2832'/>
+      <ROUTE fromNode='ClockR' fromField='fraction_changed' toNode='InterpR' toField='set_fraction'/><ROUTE fromNode='InterpR' fromField='value_changed' toNode='RodilloDEF' toField='rotation'/>
+
+      <TimeSensor DEF='ClockP' cycleInterval='3.0' loop='true' enabled='true' />
+      <PositionInterpolator DEF='InterpP' key='0 0.3 0.55 0.85 1' keyValue='0 3.975 0  0 3.975 0  0 5.5 0  0 5.5 0  0 3.975 0'/>
+      <ROUTE fromNode='ClockP' fromField='fraction_changed' toNode='InterpP' toField='set_fraction'/><ROUTE fromNode='InterpP' fromField='value_changed' toNode='PistonDEF' toField='translation'/>
+
+      <!-- PISO SOLIDO -->
+      <Transform translation='0 -0.3 0'><Shape><Appearance><Material diffuseColor='0.88 0.88 0.9'/><FrictionalSurface stiffness='1.5' damping='0.1'/></Appearance><Box size='26 0.6 16'/></Shape></Transform>
+
+      <!-- ZONA 1: RODILLO DETALLADO -->
+      <Transform translation='-8.0 1.9 0'><Shape><Appearance><Material diffuseColor='0.38 0.40 0.44'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.8 3.8 1.8'/></Shape></Transform>
+      <Transform translation='-3.4 1.9 0'><Shape><Appearance><Material diffuseColor='0.38 0.40 0.44'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.8 3.8 1.8'/></Shape></Transform>
+      <Transform translation='-5.7 3.9 0' rotation='0 0 1 1.5708'><Shape><Appearance><Material diffuseColor='0.8 0.8 0.8'/><FrictionalSurface stiffness='1.5'/></Appearance><Cylinder radius='0.13' height='5.8'/></Shape></Transform>
+      <Transform translation='-5.7 3.9 0'><Transform DEF='RodilloDEF' rotation='1 0 0 0'><Transform rotation='0 0 1 1.5708'><Shape><Appearance><Material diffuseColor='0.08 0.08 0.08' specularColor='0.4 0.4 0.4'/><FrictionalSurface stiffness='0.8' damping='0.6' staticFriction='0.9' dynamicFriction='0.8'/></Appearance><Cylinder radius='1.05' height='4.5'/></Shape></Transform></Transform></Transform>
+
+      <!-- ZONA 2: PRENSA HIDRAULICA COMPLETA -->
+      <Transform translation='0 9.5 0'><Shape><Appearance><Material diffuseColor='0.75 0.1 0.08'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='6.2 1.0 2.6'/></Shape></Transform>
+      <Transform translation='-2.8 5.0 0'><Shape><Appearance><Material diffuseColor='0.52 0.52 0.58'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.75 10.0 1.0'/></Shape></Transform>
+      <Transform translation='2.8 5.0 0'><Shape><Appearance><Material diffuseColor='0.52 0.52 0.58'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.75 10.0 1.0'/></Shape></Transform>
+      
+      <!-- PISTON DE LA PRENSA (Animado) -->
+      <Transform DEF='PistonDEF' translation='0 3.975 0'>
+        <Shape><Appearance><Material diffuseColor='0.78 0.78 0.82'/><FrictionalSurface stiffness='1.5'/></Appearance><Cylinder radius='0.52' height='3.5'/></Shape>
+        <Transform translation='0 -1.75 0'><Shape><Appearance><Material diffuseColor='0.72 0.1 0.08'/><FrictionalSurface stiffness='0.25' damping='0.95'/></Appearance><Box size='4.0 0.8 2.2'/></Shape></Transform>
+      </Transform>
+
+      <!-- Pieza de espuma y su SOPORTE DE BASE (Conectado a las columnas) -->
+      <Transform translation='0 1.25 0'><Shape><Appearance><Material diffuseColor='0.45 0.45 0.5' specularColor='0.8 0.8 0.8' shininess='0.5'/><FrictionalSurface stiffness='1.5' damping='0.2'/></Appearance><Box size='6.3 0.25 2.2'/></Shape></Transform>
+      <Transform translation='0 1.6 0'><Shape><Appearance><Material diffuseColor='0.98 0.72 0.1'/><FrictionalSurface stiffness='0.2' damping='0.95' staticFriction='0.4' dynamicFriction='0.4'/></Appearance><Box size='2.6 0.45 1.8'/></Shape></Transform>
+
+      <!-- ZONA 3: MESA DE VIDRIO CON BOLAS LUBRICADAS Y PATAS -->
+      <Transform translation='7.5 2.3 0'><Shape><Appearance><Material diffuseColor='0.35 0.8 1.0' transparency='0.3' specularColor='1 1 1' shininess='1.0'/><SmoothSurface stiffness='1.2' damping='0.04'/></Appearance><Box size='4.8 0.18 4.2'/></Shape></Transform>
+      
+      <!-- Patas de la mesa -->
+      <Transform translation='5.3 1.0 1.9'><Shape><Appearance><Material diffuseColor='0.6 0.6 0.65'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.2 2.6 0.2'/></Shape></Transform>
+      <Transform translation='9.7 1.0 1.9'><Shape><Appearance><Material diffuseColor='0.6 0.6 0.65'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.2 2.6 0.2'/></Shape></Transform>
+      <Transform translation='5.3 1.0 -1.9'><Shape><Appearance><Material diffuseColor='0.6 0.6 0.65'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.2 2.6 0.2'/></Shape></Transform>
+      <Transform translation='9.7 1.0 -1.9'><Shape><Appearance><Material diffuseColor='0.6 0.6 0.65'/><FrictionalSurface stiffness='1.5'/></Appearance><Box size='0.2 2.6 0.2'/></Shape></Transform>
+      
+      <!-- Bola 1: Lubricada (SmoothSurface) -->
+      <Transform translation='7.5 2.84 0.5'>
+        <Shape>
+          <Appearance>
+            <Material diffuseColor='1 0.2 0.2' specularColor='1 1 1' shininess='1.0'/>
+            <SmoothSurface stiffness='1.4' damping='0.02'/>
+          </Appearance>
+          <Sphere radius='0.45'/>
+        </Shape>
+      </Transform>
+      
+      <!-- Bola 2: Lubricada (SmoothSurface) -->
+      <Transform translation='6.5 2.74 -1.0'>
+        <Shape>
+          <Appearance>
+            <Material diffuseColor='0.2 1 0.2' specularColor='1 1 1' shininess='1.0'/>
+            <SmoothSurface stiffness='1.4' damping='0.02'/>
+          </Appearance>
+          <Sphere radius='0.35'/>
+        </Shape>
+      </Transform>
+      
+      <!-- Bola 3: Lubricada (SmoothSurface) -->
+      <Transform translation='8.5 2.74 1.0'>
+        <Shape>
+          <Appearance>
+            <Material diffuseColor='0.2 0.2 1' specularColor='1 1 1' shininess='1.0'/>
+            <SmoothSurface stiffness='1.4' damping='0.02'/>
+          </Appearance>
+          <Sphere radius='0.35'/>
+        </Shape>
+      </Transform>
+
+      <!-- TEXTOS INFORMATIVOS -->
+      <Transform translation='-10 12 0'><Shape><Appearance><Material diffuseColor='0.1 0.1 0.6'/></Appearance><Text string='"LABORATORIO HAPTICO UMNG"'><FontStyle size='1.5' style='BOLD'/></Text></Shape></Transform>
+    </Transform>
+
+  </Scene>
+</X3D>
